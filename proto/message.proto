@@ -1,0 +1,22 @@
+syntax = "proto3";
+package message;
+option go_package = "github.com/Prototype-1/freelanceX_message.notification_service/proto/message;messagePb";
+
+import "google/protobuf/timestamp.proto";
+
+service MessageService {
+  rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+}
+
+message SendMessageRequest {
+  string from_user_id = 1;
+  string to_user_id = 2;
+  string project_id = 3;
+  string message = 4;
+  repeated string attachments = 5;
+}
+
+message SendMessageResponse {
+  string message_id = 1;
+  google.protobuf.Timestamp sent_at = 2;
+}
