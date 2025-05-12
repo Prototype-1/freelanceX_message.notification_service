@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 service MessageService {
   rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+  rpc GetMessages (GetMessagesRequest) returns (GetMessagesResponse);
 }
 
 message SendMessageRequest {
@@ -19,4 +20,23 @@ message SendMessageRequest {
 message SendMessageResponse {
   string message_id = 1;
   google.protobuf.Timestamp sent_at = 2;
+}
+
+message GetMessagesRequest {
+  string sender_id = 1;
+  string receiver_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message Message {
+  string id = 1;
+  string sender_id = 2;
+  string receiver_id = 3;
+  string content = 4;
+  string timestamp = 5;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
 }
