@@ -18,6 +18,7 @@ type MessageRepository interface {
 }
 
 type MessageService struct {
+     pb.UnimplementedMessageServiceServer
     repo MessageRepository
 }
 
