@@ -14,6 +14,7 @@ import (
 
 type MessageRepository interface {
     SaveMessage(ctx context.Context, msg *model.Message) (primitive.ObjectID, error)
+    GetMessages(ctx context.Context, fromID, toID uuid.UUID, limit, offset int) ([]model.Message, error)
 }
 
 type MessageService struct {
@@ -62,4 +63,35 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
         MessageId: insertedID.Hex(),
         SentAt:    timestamppb.New(now),
     }, nil
+}
+
+
+func (s *MessageService) GetMessages(ctx context.Context, req *pb.GetMessagesRequest) (*pb.GetMessagesResponse, error) {
+    fromID, err := uuid.Parse(req.SenderId)
+    if err != nil {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid sender ID: %v", err)
+    }
+    
+    toID, err := uuid.Parse(req.ReceiverId)
+    if err != nil {
+        return nil, status.Errorf(codes.InvalidArgument, "invalid receiver ID: %v", err)
+    }
+    
+    messages, err := s.repo.GetMessages(ctx, fromID, toID, int(req.Limit), int(req.Offset))
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to fetch messages: %v", err)
+    }
+
+    pbMessages := make([]*pb.Message, 0, len(messages))
+    for _, msg := range messages {
+        pbMessages = append(pbMessages, &pb.Message{
+            Id:         msg.ID.Hex(),
+            SenderId:   msg.FromUserID.String(),
+            ReceiverId: msg.ToUserID.String(),
+            Content:    msg.MessageText,
+            Timestamp:  msg.SentAt.Format(time.RFC3339),
+        })
+    }
+    
+    return &pb.GetMessagesResponse{Messages: pbMessages}, nil
 }
