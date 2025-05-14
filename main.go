@@ -12,6 +12,8 @@ proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 	"google.golang.org/grpc"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+"github.com/Prototype-1/freelanceX_message.notification_service/kafka"
+
 )
 
 func main() {
@@ -25,7 +27,6 @@ func main() {
 
 	 db := client.Database(cfg.DatabaseName)
     messagesCollection := db.Collection("messages")
-
 	messageRepo := repository.NewMessageRepository(messagesCollection)
 	messageService := service.NewMessageService(messageRepo)
 	
@@ -36,6 +37,14 @@ func main() {
 
 	grpcServer := grpc.NewServer()
  proto.RegisterMessageServiceServer(grpcServer, messageService)
+
+ 	go func() {
+		broker := "localhost:9092" 
+		topic := "new.message"     
+		groupID := "notification-group" 
+
+		kafka.ConsumeMessages(broker, topic, groupID)
+	}()
 
 	fmt.Printf("Starting gRPC server on port %s...\n", cfg.ServerPort)
 	if err := grpcServer.Serve(lis); err != nil {
