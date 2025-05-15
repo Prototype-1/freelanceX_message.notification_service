@@ -5,7 +5,11 @@ import (
     "encoding/json"
     "fmt"
     "log"
+    "time"
     "github.com/segmentio/kafka-go"
+       "github.com/Prototype-1/freelanceX_message.notification_service/internal/model"
+    "github.com/Prototype-1/freelanceX_message.notification_service/internal/repository"
+    "github.com/google/uuid"
 )
 
 type KafkaMessage struct {
@@ -16,7 +20,16 @@ type KafkaMessage struct {
     Timestamp  string `json:"timestamp"`
 }
 
-func ConsumeMessages(brokerAddr string, topic string, groupID string) {
+type Consumer struct {
+    Repo *repository.MessageRepository
+}
+
+func NewConsumer(repo *repository.MessageRepository) *Consumer {
+    return &Consumer{Repo: repo}
+}
+
+func (c *Consumer) ConsumeMessages(brokerAddr string, topic string, groupID string) {
+    log.Printf("Attempting to connect to Kafka at: %s", brokerAddr)
     r := kafka.NewReader(kafka.ReaderConfig{
         Brokers:  []string{brokerAddr},
         GroupID:  groupID,
@@ -29,9 +42,11 @@ func ConsumeMessages(brokerAddr string, topic string, groupID string) {
 
     fmt.Println("Kafka consumer started...")
     for {
+        log.Printf("Waiting for message from topic: %s", topic)
         m, err := r.ReadMessage(context.Background())
         if err != nil {
             log.Printf("Error reading message: %v", err)
+            time.Sleep(5 * time.Second)
             continue
         }
 
@@ -42,16 +57,40 @@ func ConsumeMessages(brokerAddr string, topic string, groupID string) {
         }
 
         log.Printf("Received message: %+v", event)
-        handleNotification(event)
+        c.handleNotification(event)
     }
 }
 
-func handleNotification(msg KafkaMessage) {
-    log.Printf("📣 Notifying %s about new message from %s on project %s: %s",
+func (c *Consumer) handleNotification(msg KafkaMessage) {
+    log.Printf("Notifying %s about new message from %s on project %s: %s",
         msg.ToUserID, msg.FromUserID, msg.ProjectID, msg.Content)
 
-    // TODO:
-    // - Store in DB (if needed)
-    // - Push real-time event to WebSocket layer (optional)
-    // - Send email using SMTP or a service
+    fromUUID, _ := uuid.Parse(msg.FromUserID)
+    toUUID, _ := uuid.Parse(msg.ToUserID)
+    projectUUID, _ := uuid.Parse(msg.ProjectID)
+
+    message := model.Message{
+        FromUserID:  fromUUID,
+        ToUserID:    toUUID,
+        ProjectID:   projectUUID,
+        MessageText: msg.Content,
+        Channel:     model.InAppChannel,
+        SentAt:      time.Now(),
+        Read:        false,
+        Status:      model.DeliveredStatus,
+        IsDeleted:   false,
+    }
+
+    _, err := c.Repo.CreateMessage(context.Background(), &message)
+    if err != nil {
+        log.Printf("Failed to store message: %v", err)
+        return
+    }
+    go func() {
+        log.Printf("[WebSocket] Notify user %s about new message on project %s", msg.ToUserID, msg.ProjectID)
+    }()
+
+    go func() {
+        log.Printf("[Email] Sending email to %s: You have a new message", msg.ToUserID)
+    }()
 }

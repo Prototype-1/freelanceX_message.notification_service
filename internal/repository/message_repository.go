@@ -55,3 +55,12 @@ func (r *MessageRepository) GetMessages(ctx context.Context, fromID, toID uuid.U
 
 	return messages, nil
 }
+
+func (r *MessageRepository) CreateMessage(ctx context.Context, message *model.Message) (*model.Message, error) {
+    res, err := r.collection.InsertOne(ctx, message)
+    if err != nil {
+        return nil, err
+    }
+    message.ID = res.InsertedID.(primitive.ObjectID)
+    return message, nil
+}

@@ -43,7 +43,10 @@ func main() {
 		topic := "new.message"     
 		groupID := "notification-group" 
 
-		kafka.ConsumeMessages(broker, topic, groupID)
+		 log.Printf("Starting Kafka consumer with broker: %s, topic: %s, groupID: %s", 
+               broker, topic, groupID)
+		consumer := kafka.NewConsumer(messageRepo)
+        consumer.ConsumeMessages(broker, topic, groupID)
 	}()
 
 	fmt.Printf("Starting gRPC server on port %s...\n", cfg.ServerPort)
