@@ -9,8 +9,11 @@ import (
 "github.com/Prototype-1/freelanceX_message.notification_service/email"
 proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/service"
+clt "github.com/Prototype-1/freelanceX_message.notification_service/internal/client"
+authPb "github.com/Prototype-1/freelanceX_message.notification_service/proto/user_service"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/repository"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 "github.com/Prototype-1/freelanceX_message.notification_service/kafka"
@@ -27,15 +30,28 @@ func main() {
 	defer client.Disconnect(ctx)
 
 	 db := client.Database(cfg.DatabaseName)
+
     messagesCollection := db.Collection("messages")
 	messageRepo := repository.NewMessageRepository(messagesCollection)
-		emailCfg := email.SMTPConfig{
+	emailCfg := email.SMTPConfig{
 	EmailSender: cfg.SMTP.EmailSender,
 	EmailPass:   cfg.SMTP.EmailPass,
 	SMTPHost:    cfg.SMTP.SMTPHost,
 	SMTPPort:    cfg.SMTP.SMTPPort,
 }
-	messageService := service.NewMessageService(messageRepo, emailCfg)
+
+ userConn, err := grpc.NewClient(
+        cfg.UserServiceAddress,
+        grpc.WithTransportCredentials(insecure.NewCredentials()),
+    )
+    if err != nil {
+        log.Fatalf("Failed to connect to User Service: %v", err)
+    }
+	defer userConn.Close()
+
+	authClient := authPb.NewAuthServiceClient(userConn)
+	userClient := clt.NewUserServiceClient(authClient)
+	messageService := service.NewMessageService(messageRepo, emailCfg, userClient)
 	
 	lis, err := net.Listen("tcp", cfg.ServerPort)
 	if err != nil {

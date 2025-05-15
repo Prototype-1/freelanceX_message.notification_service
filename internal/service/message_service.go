@@ -11,6 +11,7 @@ import (
 		"go.mongodb.org/mongo-driver/bson/primitive"
 		pb "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 		 "github.com/Prototype-1/freelanceX_message.notification_service/email"
+		 "github.com/Prototype-1/freelanceX_message.notification_service/internal/client"
 		"github.com/Prototype-1/freelanceX_message.notification_service/internal/model"
 )
 
@@ -23,12 +24,14 @@ type MessageService struct {
      pb.UnimplementedMessageServiceServer
     repo MessageRepository
      smtpCfg email.SMTPConfig
+     userClient *client.UserServiceClient 
 }
 
-func NewMessageService(repo MessageRepository, smtpCfg email.SMTPConfig) *MessageService {
+func NewMessageService(repo MessageRepository, smtpCfg email.SMTPConfig, userClient *client.UserServiceClient) *MessageService {
     return &MessageService{
         repo:    repo,
         smtpCfg: smtpCfg,
+         userClient: userClient,
     }
 }
 
@@ -66,18 +69,20 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
         return nil, status.Errorf(codes.Internal, "failed to save message: %v", err)
     }
 
-testRecipient := "aswin100396@gmail.com"
-subject := "Test Subject"
-body := "This is a test message."
-
-err = email.SendMail(s.smtpCfg, testRecipient, subject, body)
+emailAddr, err := s.userClient.GetUserEmail(ctx, req.GetToUserId())
 if err != nil {
-    fmt.Printf(" Failed to send test email: %v\n", err)
+    fmt.Printf("Could not fetch recipient email: %v\n", err)
 } else {
-    fmt.Println(" Test email sent successfully!")
+    subject := "You've received a new message"
+    body := fmt.Sprintf("You have a new message from user %s: %s", req.GetFromUserId(), req.GetMessage())
+
+    err = email.SendMail(s.smtpCfg, emailAddr, subject, body)
+    if err != nil {
+        fmt.Printf("Failed to send email: %v\n", err)
+    } else {
+        fmt.Println("Notification email sent successfully!")
+    }
 }
-
-
     return &pb.SendMessageResponse{
         MessageId: insertedID.Hex(),
         SentAt:    timestamppb.New(now),

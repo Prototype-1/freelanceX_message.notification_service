@@ -19,7 +19,8 @@ type Config struct {
 	MongoURI      string
 	DatabaseName  string
 	ServerPort    string
-	 SMTP         email.SMTPConfig
+	UserServiceAddress string 
+	SMTP         email.SMTPConfig
 }
 
 func LoadConfig() *Config {
@@ -57,10 +58,16 @@ func LoadConfig() *Config {
         log.Println("Warning: SMTP config is incomplete, email sending may fail")
     }
 
+	userServiceAddr := v.GetString("USER_SERVICE_GRPC_ADDR")
+if userServiceAddr == "" {
+    log.Fatal("USER_SERVICE_GRPC_ADDR is required but not set")
+}
+
 	return &Config{
 		MongoURI:     mongoURI,
 		DatabaseName: databaseName,
 		ServerPort:   serverPort,
+		UserServiceAddress: userServiceAddr, 
 		SMTP:         smtpCfg,
 	}
 }
