@@ -4,12 +4,22 @@ import (
 	"log"
 	"os"
 	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
+	"github.com/Prototype-1/freelanceX_message.notification_service/email"
 )
+
+type SMTPConfig struct {
+    EmailSender string `mapstructure:"EMAIL_SENDER"`
+    EmailPass   string `mapstructure:"EMAIL_PASSWORD"`
+    SMTPHost    string `mapstructure:"EMAIL_SMTP_HOST"`
+    SMTPPort    string `mapstructure:"SMTP_PORT"`
+}
 
 type Config struct {
 	MongoURI      string
 	DatabaseName  string
 	ServerPort    string
+	 SMTP         email.SMTPConfig
 }
 
 func LoadConfig() *Config {
@@ -17,6 +27,9 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Println(".env file not found, relying on system environment variables...")
 	}
+
+	    v := viper.New()
+    v.AutomaticEnv()
 
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
@@ -33,9 +46,21 @@ func LoadConfig() *Config {
 		serverPort = ":50055" 
 	}
 
+	  smtpCfg := email.SMTPConfig{
+        EmailSender: v.GetString("EMAIL_SENDER"),
+        EmailPass:   v.GetString("EMAIL_PASSWORD"),
+        SMTPHost:    v.GetString("EMAIL_SMTP_HOST"),
+        SMTPPort:    v.GetString("SMTP_PORT"),
+    }
+
+    if smtpCfg.EmailSender == "" || smtpCfg.EmailPass == "" || smtpCfg.SMTPHost == "" || smtpCfg.SMTPPort == "" {
+        log.Println("Warning: SMTP config is incomplete, email sending may fail")
+    }
+
 	return &Config{
 		MongoURI:     mongoURI,
 		DatabaseName: databaseName,
 		ServerPort:   serverPort,
+		SMTP:         smtpCfg,
 	}
 }

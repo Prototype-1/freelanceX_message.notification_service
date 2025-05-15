@@ -6,6 +6,7 @@ import (
 "net"
 "fmt"
 "github.com/Prototype-1/freelanceX_message.notification_service/config"
+"github.com/Prototype-1/freelanceX_message.notification_service/email"
 proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/service"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/repository"
@@ -17,7 +18,7 @@ proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 )
 
 func main() {
-		cfg := config.LoadConfig()
+	cfg := config.LoadConfig()
 	ctx := context.TODO()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI))
 	if err != nil {
@@ -28,7 +29,13 @@ func main() {
 	 db := client.Database(cfg.DatabaseName)
     messagesCollection := db.Collection("messages")
 	messageRepo := repository.NewMessageRepository(messagesCollection)
-	messageService := service.NewMessageService(messageRepo)
+		emailCfg := email.SMTPConfig{
+	EmailSender: cfg.SMTP.EmailSender,
+	EmailPass:   cfg.SMTP.EmailPass,
+	SMTPHost:    cfg.SMTP.SMTPHost,
+	SMTPPort:    cfg.SMTP.SMTPPort,
+}
+	messageService := service.NewMessageService(messageRepo, emailCfg)
 	
 	lis, err := net.Listen("tcp", cfg.ServerPort)
 	if err != nil {

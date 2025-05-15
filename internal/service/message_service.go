@@ -3,12 +3,14 @@ package service
 import (
 		"time"
 		"context"
+        "fmt"
 	    "github.com/google/uuid"
 		 "google.golang.org/protobuf/types/known/timestamppb"
 	    "google.golang.org/grpc/status"
     	"google.golang.org/grpc/codes"
 		"go.mongodb.org/mongo-driver/bson/primitive"
 		pb "github.com/Prototype-1/freelanceX_message.notification_service/proto"
+		 "github.com/Prototype-1/freelanceX_message.notification_service/email"
 		"github.com/Prototype-1/freelanceX_message.notification_service/internal/model"
 )
 
@@ -20,10 +22,14 @@ type MessageRepository interface {
 type MessageService struct {
      pb.UnimplementedMessageServiceServer
     repo MessageRepository
+     smtpCfg email.SMTPConfig
 }
 
-func NewMessageService(repo MessageRepository) *MessageService {
-    return &MessageService{repo: repo}
+func NewMessageService(repo MessageRepository, smtpCfg email.SMTPConfig) *MessageService {
+    return &MessageService{
+        repo:    repo,
+        smtpCfg: smtpCfg,
+    }
 }
 
 func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
@@ -59,6 +65,18 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to save message: %v", err)
     }
+
+testRecipient := "aswin100396@gmail.com"
+subject := "Test Subject"
+body := "This is a test message."
+
+err = email.SendMail(s.smtpCfg, testRecipient, subject, body)
+if err != nil {
+    fmt.Printf(" Failed to send test email: %v\n", err)
+} else {
+    fmt.Println(" Test email sent successfully!")
+}
+
 
     return &pb.SendMessageResponse{
         MessageId: insertedID.Hex(),
