@@ -81,7 +81,7 @@ func (c *Consumer) handleNotification(msg KafkaMessage) {
         IsDeleted:   false,
     }
 
-    _, err := c.Repo.CreateMessage(context.Background(), &message)
+    _, err := c.Repo.SaveMessage(context.Background(), &message)
     if err != nil {
         log.Printf("Failed to store message: %v", err)
         return
