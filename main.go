@@ -1,11 +1,14 @@
 package main
 
 import (
+"os"
 "log"
 "context"
 "net"
-"fmt"
+ "os/signal"
+"syscall"
 "github.com/Prototype-1/freelanceX_message.notification_service/config"
+"github.com/Prototype-1/freelanceX_message.notification_service/pkg"
 "github.com/Prototype-1/freelanceX_message.notification_service/email"
 proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/service"
@@ -22,7 +25,10 @@ authPb "github.com/Prototype-1/freelanceX_message.notification_service/proto/use
 
 func main() {
 	cfg := config.LoadConfig()
-	ctx := context.TODO()
+
+	ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
@@ -30,9 +36,9 @@ func main() {
 	defer client.Disconnect(ctx)
 
 	 db := client.Database(cfg.DatabaseName)
-
     messagesCollection := db.Collection("messages")
 	messageRepo := repository.NewMessageRepository(messagesCollection)
+
 	emailCfg := email.SMTPConfig{
 	EmailSender: cfg.SMTP.EmailSender,
 	EmailPass:   cfg.SMTP.EmailPass,
@@ -61,6 +67,8 @@ func main() {
 	grpcServer := grpc.NewServer()
  proto.RegisterMessageServiceServer(grpcServer, messageService)
 
+ go pkg.StartDeliveryStatusCron(ctx, messageRepo)
+
  	go func() {
 		broker := "localhost:9092" 
 		topic := "new.message"     
@@ -72,7 +80,16 @@ func main() {
         consumer.ConsumeMessages(broker, topic, groupID)
 	}()
 
-	fmt.Printf("Starting gRPC server on port %s...\n", cfg.ServerPort)
+	   go func() {
+        stopChan := make(chan os.Signal, 1)
+        signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
+        <-stopChan
+        log.Println("Shutdown signal received, stopping services...")
+        cancel()            
+        grpcServer.GracefulStop()
+    }()
+
+	log.Printf("Starting gRPC server on port %s...\n", cfg.ServerPort)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to start gRPC server: %v", err)
 	}

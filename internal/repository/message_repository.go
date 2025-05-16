@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 	"go.mongodb.org/mongo-driver/mongo"
 	"github.com/google/uuid"
 	 "go.mongodb.org/mongo-driver/bson"
@@ -54,4 +55,30 @@ func (r *MessageRepository) GetMessages(ctx context.Context, fromID, toID uuid.U
 	}
 
 	return messages, nil
+}
+
+func (r *MessageRepository) UpdateMessageStatus(ctx context.Context, messageID primitive.ObjectID, status model.MessageStatus) error {
+    filter := bson.M{"_id": messageID}
+    update := bson.M{"$set": bson.M{"status": status}}
+    _, err := r.collection.UpdateOne(ctx, filter, update)
+    return err
+}
+
+func (r *MessageRepository) FindPendingDeliveryMessages(ctx context.Context, olderThan time.Time) ([]model.Message, error) {
+    filter := bson.M{
+        "status": model.SentStatus,
+        "sent_at": bson.M{"$lte": olderThan},
+        "is_deleted": false,
+    }
+    cursor, err := r.collection.Find(ctx, filter)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var messages []model.Message
+    if err := cursor.All(ctx, &messages); err != nil {
+        return nil, err
+    }
+    return messages, nil
 }

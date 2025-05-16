@@ -11,6 +11,7 @@ import (
 		"go.mongodb.org/mongo-driver/bson/primitive"
 		pb "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 		 "github.com/Prototype-1/freelanceX_message.notification_service/email"
+		 "github.com/Prototype-1/freelanceX_message.notification_service/config"
 		 "github.com/Prototype-1/freelanceX_message.notification_service/internal/client"
 		"github.com/Prototype-1/freelanceX_message.notification_service/internal/model"
 )
@@ -69,6 +70,12 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
         return nil, status.Errorf(codes.Internal, "failed to save message: %v", err)
     }
 
+      isOnline, err := config.IsUserOnline(ctx, req.GetToUserId())
+    if err != nil {
+        fmt.Printf("Error checking user online status: %v\n", err)
+    }
+
+    if !isOnline {
 emailAddr, err := s.userClient.GetUserEmail(ctx, req.GetToUserId())
 if err != nil {
     fmt.Printf("Could not fetch recipient email: %v\n", err)
@@ -83,12 +90,12 @@ if err != nil {
         fmt.Println("Notification email sent successfully!")
     }
 }
+}
     return &pb.SendMessageResponse{
         MessageId: insertedID.Hex(),
         SentAt:    timestamppb.New(now),
     }, nil
 }
-
 
 func (s *MessageService) GetMessages(ctx context.Context, req *pb.GetMessagesRequest) (*pb.GetMessagesResponse, error) {
     fromID, err := uuid.Parse(req.SenderId)

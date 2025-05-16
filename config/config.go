@@ -20,6 +20,7 @@ type Config struct {
 	DatabaseName  string
 	ServerPort    string
 	UserServiceAddress string 
+	RedisAddr     string
 	SMTP         email.SMTPConfig
 }
 
@@ -47,6 +48,11 @@ func LoadConfig() *Config {
 		serverPort = ":50055" 
 	}
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+if redisAddr == "" {
+	log.Fatal("REDIS_ADDR is required but not set")
+}
+
 	  smtpCfg := email.SMTPConfig{
         EmailSender: v.GetString("EMAIL_SENDER"),
         EmailPass:   v.GetString("EMAIL_PASSWORD"),
@@ -68,6 +74,7 @@ if userServiceAddr == "" {
 		DatabaseName: databaseName,
 		ServerPort:   serverPort,
 		UserServiceAddress: userServiceAddr, 
+		RedisAddr:    redisAddr,
 		SMTP:         smtpCfg,
 	}
 }
