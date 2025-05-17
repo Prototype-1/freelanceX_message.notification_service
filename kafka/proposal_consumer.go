@@ -18,7 +18,8 @@ type ProposalEvent struct {
     Status       string `json:"status"`     
 }
 
-func ConsumeProposalEvents(broker, topic string, smtpCfg email.SMTPConfig, userClient client.UserServiceClient) {
+// func ConsumeProposalEvents(broker, topic string, smtpCfg email.SMTPConfig, userClient client.UserServiceClient)
+func ConsumeProposalEvents(broker, topic string, smtpCfg email.SMTPConfig, userClient *client.UserServiceClient) {
     r := kafka.NewReader(kafka.ReaderConfig{
         Brokers:  []string{broker},
         Topic:    topic,

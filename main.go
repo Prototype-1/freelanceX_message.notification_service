@@ -80,6 +80,13 @@ func main() {
         consumer.ConsumeMessages(broker, topic, groupID)
 	}()
 
+	go func() {
+    broker := "localhost:9092"
+    topic := "proposal.events"
+    log.Printf("Starting Proposal Kafka consumer with broker: %s, topic: %s", broker, topic)
+    kafka.ConsumeProposalEvents(broker, topic, emailCfg, userClient)
+}()
+
 	   go func() {
         stopChan := make(chan os.Signal, 1)
         signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
