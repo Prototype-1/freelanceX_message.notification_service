@@ -14,6 +14,7 @@ proto "github.com/Prototype-1/freelanceX_message.notification_service/proto"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/service"
 clt "github.com/Prototype-1/freelanceX_message.notification_service/internal/client"
 authPb "github.com/Prototype-1/freelanceX_message.notification_service/proto/user_service"
+pb "github.com/Prototype-1/freelanceX_message.notification_service/proto/invoice_service"
 "github.com/Prototype-1/freelanceX_message.notification_service/internal/repository"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -85,6 +86,24 @@ func main() {
     topic := "proposal-events"
     log.Printf("Starting Proposal Kafka consumer with broker: %s, topic: %s", broker, topic)
     kafka.ConsumeProposalEvents(broker, topic, emailCfg, userClient)
+}()
+
+go func() {
+	broker := "localhost:9092"
+	topic := "invoice-events"
+	log.Printf("Starting Invoice Kafka consumer with broker: %s, topic: %s", broker, topic)
+
+	invoiceConn, err := grpc.NewClient(
+		cfg.InvoiceServiceAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Printf("Failed to connect to Invoice Service: %v", err)
+		return
+	}
+rawInvoiceClient := pb.NewInvoiceServiceClient(invoiceConn)
+invoiceClient := clt.NewInvoiceServiceClient(rawInvoiceClient)
+	kafka.ConsumeInvoiceEvents(broker, topic, emailCfg, invoiceClient, userClient)
 }()
 
 	   go func() {

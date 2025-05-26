@@ -20,6 +20,7 @@ type Config struct {
 	DatabaseName  string
 	ServerPort    string
 	UserServiceAddress string 
+	InvoiceServiceAddress string
 	RedisAddr     string
 	SMTP         email.SMTPConfig
 }
@@ -67,6 +68,11 @@ if redisAddr == "" {
 	userServiceAddr := v.GetString("USER_SERVICE_GRPC_ADDR")
 if userServiceAddr == "" {
     log.Fatal("USER_SERVICE_GRPC_ADDR is required but not set")
+}
+
+	InvoiceServiceAddress := v.GetString("INVOICE_SERVICE_GRPC_ADDR")
+if InvoiceServiceAddress == "" {
+    log.Fatal("INVOICE_SERVICE_GRPC_ADDR is required but not set")
 }
 
 	return &Config{
