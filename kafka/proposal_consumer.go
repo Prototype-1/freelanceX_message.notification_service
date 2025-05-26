@@ -19,6 +19,7 @@ type ProposalEvent struct {
 }
 
 func ConsumeProposalEvents(broker, topic string, smtpCfg email.SMTPConfig, userClient *client.UserServiceClient) {
+    log.Println("Started consuming proposal events from Kafka topic:", topic)
     r := kafka.NewReader(kafka.ReaderConfig{
         Brokers:  []string{broker},
         Topic:    topic,
