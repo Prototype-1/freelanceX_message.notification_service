@@ -80,6 +80,7 @@ if InvoiceServiceAddress == "" {
 		DatabaseName: databaseName,
 		ServerPort:   serverPort,
 		UserServiceAddress: userServiceAddr, 
+		InvoiceServiceAddress: InvoiceServiceAddress,
 		RedisAddr:    redisAddr,
 		SMTP:         smtpCfg,
 	}
