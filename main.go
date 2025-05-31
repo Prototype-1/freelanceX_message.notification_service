@@ -26,6 +26,7 @@ pb "github.com/Prototype-1/freelanceX_message.notification_service/proto/invoice
 
 func main() {
 	cfg := config.LoadConfig()
+	pkg.InitRedis(cfg.RedisAddr)
 
 	ctx, cancel := context.WithCancel(context.Background())
     defer cancel()
