@@ -7,6 +7,9 @@ import (
 )
 
 func IsUserOnline(ctx context.Context, userID string) (bool, error) {
+	if pkg.Rdb == nil {
+		return false, fmt.Errorf("redis client not initialized")
+	}
 	key := fmt.Sprintf("online:%s", userID)
 	exists, err := pkg.Rdb.Exists(ctx, key).Result()
 	if err != nil {
