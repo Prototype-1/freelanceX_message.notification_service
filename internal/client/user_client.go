@@ -21,5 +21,8 @@ func (uc *UserServiceClient) GetUserEmail(ctx context.Context, userID string) (s
     if err != nil {
         return "", fmt.Errorf("failed to fetch user email: %w", err)
     }
+      if resp == nil || resp.Email == "" {
+        return "", fmt.Errorf("user not found or email is empty")
+    }
     return resp.Email, nil
 }

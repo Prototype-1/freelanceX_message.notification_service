@@ -50,16 +50,15 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
         return nil, status.Errorf(codes.InvalidArgument, "invalid project_id")
     }
 
-    senderEmail, err := s.userClient.GetUserEmail(ctx, req.GetFromUserId())
-if err != nil || senderEmail == "" {
-    return nil, status.Errorf(codes.InvalidArgument, "sender does not exist")
+senderEmail, err := s.userClient.GetUserEmail(ctx, req.GetFromUserId())
+if err != nil {
+    return nil, status.Errorf(codes.InvalidArgument, "invalid from_user_id: %v", err)
 }
 
 recipientEmail, err := s.userClient.GetUserEmail(ctx, req.GetToUserId())
-if err != nil || recipientEmail == "" {
-    return nil, status.Errorf(codes.InvalidArgument, "recipient does not exist")
+if err != nil {
+    return nil, status.Errorf(codes.InvalidArgument, "invalid to_user_id: %v", err)
 }
-
     now := time.Now()
 
     msg := &model.Message{
@@ -84,22 +83,16 @@ if err != nil || recipientEmail == "" {
     if err != nil {
         fmt.Printf("Error checking user online status: %v\n", err)
     }
-
     if !isOnline {
-emailAddr, err := s.userClient.GetUserEmail(ctx, req.GetToUserId())
-if err != nil {
-    fmt.Printf("Could not fetch recipient email: %v\n", err)
-} else {
     subject := "You've received a new message"
-    body := fmt.Sprintf("You have a new message from user %s: %s", req.GetFromUserId(), req.GetMessage())
+    body := fmt.Sprintf("You have a new message from user %s: %s", senderEmail, req.GetMessage())
 
-    err = email.SendMail(s.smtpCfg, emailAddr, subject, body)
+    err = email.SendMail(s.smtpCfg, recipientEmail, subject, body)
     if err != nil {
         fmt.Printf("Failed to send email: %v\n", err)
     } else {
         fmt.Println("Notification email sent successfully!")
     }
-}
 }
     return &pb.SendMessageResponse{
         MessageId: insertedID.Hex(),
