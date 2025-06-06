@@ -50,15 +50,14 @@ func (s *MessageService) SendMessage(ctx context.Context, req *pb.SendMessageReq
         return nil, status.Errorf(codes.InvalidArgument, "invalid project_id")
     }
 
-    _, err = s.userClient.GetUserEmail(ctx, req.GetFromUserId())
-if err != nil {
-    return nil, status.Errorf(codes.InvalidArgument, "sender does not exist: %v", err)
+    senderEmail, err := s.userClient.GetUserEmail(ctx, req.GetFromUserId())
+if err != nil || senderEmail == "" {
+    return nil, status.Errorf(codes.InvalidArgument, "sender does not exist")
 }
 
-
-    _, err = s.userClient.GetUserEmail(ctx, req.GetToUserId())
-if err != nil {
-    return nil, status.Errorf(codes.InvalidArgument, "recipient does not exist: %v", err)
+recipientEmail, err := s.userClient.GetUserEmail(ctx, req.GetToUserId())
+if err != nil || recipientEmail == "" {
+    return nil, status.Errorf(codes.InvalidArgument, "recipient does not exist")
 }
 
     now := time.Now()
