@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-service
+  labels:
+    app: message-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-service
+  template:
+    metadata:
+      labels:
+        app: message-service
+    spec:
+      containers:
+        - name: message-service
+          image: aswinputhukaatil/freelancex_message_notification_service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 50055
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: MONGO_URI
+            - name: MONGO_DB
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: MONGO_DB
+            - name: SERVER_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: SERVER_PORT
+            - name: REDIS_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: REDIS_ADDR
+            - name: EMAIL_SENDER
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: EMAIL_SENDER
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: EMAIL_PASSWORD
+            - name: EMAIL_SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: EMAIL_SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: SMTP_PORT
+            - name: USER_SERVICE_GRPC_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: USER_SERVICE_GRPC_ADDR
+            - name: INVOICE_SERVICE_GRPC_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: message-service-secret
+                  key: INVOICE_SERVICE_GRPC_ADDR
