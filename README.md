@@ -13,22 +13,6 @@ Handles internal user messaging and platform notifications for proposal and webs
 - SMTP
 - CRON 
 
-## Folder Structure
-
-.
-├── config/
-├── email/
-├── handler/
-├── model/
-├── kafka/
-├── proto/
-├── repository/
-├── service/
-├── pkg/
-├── main.go
-└── go.mod
-
-
 ## Setup
 
 ### 1. Clone & Navigate
