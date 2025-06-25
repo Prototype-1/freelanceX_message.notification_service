@@ -71,3 +71,5 @@ spec:
                 secretKeyRef:
                   name: message-service-secret
                   key: INVOICE_SERVICE_GRPC_ADDR
+            - name: KAFKA_BROKER
+              value: kafka:9092

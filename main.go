@@ -72,7 +72,10 @@ func main() {
  go pkg.StartDeliveryStatusCron(ctx, messageRepo)
 
  	go func() {
-		broker := "kafka:9092" 
+broker := os.Getenv("KAFKA_BROKER")
+if broker == "" {
+    broker = "kafka:9092"
+}
 		topic := "new.message"     
 		groupID := "notification-group" 
 
@@ -83,14 +86,20 @@ func main() {
 	}()
 
 	go func() {
-    broker := "kafka:9092"
+    		broker := os.Getenv("KAFKA_BROKER")
+if broker == "" {
+    broker = "kafka:9092"
+}
     topic := "proposal-events"
     log.Printf("Starting Proposal Kafka consumer with broker: %s, topic: %s", broker, topic)
     kafka.ConsumeProposalEvents(broker, topic, emailCfg, userClient)
 }()
 
 go func() {
-	broker := "kafka:9092"
+			broker := os.Getenv("KAFKA_BROKER")
+if broker == "" {
+    broker = "kafka:9092"
+}
 	topic := "invoice-events"
 	log.Printf("Starting Invoice Kafka consumer with broker: %s, topic: %s", broker, topic)
 
